@@ -16,7 +16,7 @@ import (
 	"github.com/triyam/golang-blockchain/wallet"
 )
 
-const tempDir = "templates"
+const tempDir = "wallet_server/templates"
 
 type WalletServer struct {
 	port    uint16
@@ -49,8 +49,6 @@ func (ws *WalletServer) Wallet(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodPost:
 		w.Header().Add("Content-Type", "application/json")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		myWallet := wallet.NewWallet()
 		m, _ := myWallet.MarshalJSON()
 		io.WriteString(w, string(m[:]))
@@ -88,8 +86,6 @@ func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, req *http.Reque
 		value32 := float32(value)
 
 		w.Header().Add("Content-Type", "application/json")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		transaction := wallet.NewTransaction(privateKey, publicKey,
 			*t.SenderBlockchainAddress, *t.RecipientBlockchainAddress, value32)
@@ -97,10 +93,10 @@ func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, req *http.Reque
 		signatureStr := signature.String()
 
 		bt := &block.TransactionRequest{
-			SenderBlockchainAddress:    t.SenderBlockchainAddress,
-			RecipientBlockchainAddress: t.RecipientBlockchainAddress,
-			SenderPublicKey:            t.SenderPublicKey,
-			Value:                      &value32, Signature: &signatureStr,
+			t.SenderBlockchainAddress,
+			t.RecipientBlockchainAddress,
+			t.SenderPublicKey,
+			&value32, &signatureStr,
 		}
 		m, _ := json.Marshal(bt)
 		buf := bytes.NewBuffer(m)
@@ -137,8 +133,6 @@ func (ws *WalletServer) WalletAmount(w http.ResponseWriter, req *http.Request) {
 		}
 
 		w.Header().Add("Content-Type", "application/json")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if bcsResp.StatusCode == 200 {
 			decoder := json.NewDecoder(bcsResp.Body)
 			var bar block.AmountResponse
