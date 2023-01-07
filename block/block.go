@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,25 +37,45 @@ type Block struct {
 	transactions []*Transaction
 }
 
-func NewBlock(nonce int, previousHash [32]byte, transactions []*Transaction) *Block {
+func NewBlock(nonce int, previousHash [32]byte, transactions []*Transaction) (*Block, error) {
 	b := new(Block)
 	b.timestamp = time.Now().UnixNano()
 	b.nonce = nonce
 	b.previousHash = previousHash
 	b.transactions = transactions
-	return b
+
+	if nonce < 0 {
+		return nil, errors.New("nounce must be a positive integer")
+	}
+	if previousHash == [32]byte{} {
+		return nil, errors.New("previous hash cannot be empty")
+	}
+	if transactions == nil {
+		return nil, errors.New("Transactions cannot be empty")
+	}
+
+	return b, nil
 }
 
-func (b *Block) PreviousHash() [32]byte {
-	return b.previousHash
+func (b *Block) PreviousHash() ([32]byte, error) {
+	if b == nil {
+		return [32]byte{}, errors.New("previous hash could not be found")
+	}
+	return b.previousHash, nil
 }
 
-func (b *Block) Nonce() int {
-	return b.nonce
+func (b *Block) Nonce() (int, error) {
+	if b == nil {
+		return 0, errors.New("nonce from previous block could be found")
+	}
+	return b.nonce, nil
 }
 
-func (b *Block) Transactions() []*Transaction {
-	return b.transactions
+func (b *Block) Transactions() ([]*Transaction, error) {
+	if b == nil {
+		return nil, errors.New("previous Block Transaction cannot be found")
+	}
+	return b.transactions, nil
 }
 
 func (b *Block) Print() {
@@ -66,9 +87,15 @@ func (b *Block) Print() {
 	}
 }
 
-func (b *Block) Hash() [32]byte {
-	m, _ := json.Marshal(b)
-	return sha256.Sum256([]byte(m))
+func (b *Block) Hash() ([32]byte, error) {
+	m, err := json.Marshal(b)
+	if b == nil {
+		return [32]byte{}, errors.New("Previous Block is nil")
+	}
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("could not marshal json: %s\n", err)
+	}
+	return sha256.Sum256([]byte(m)), nil
 }
 
 func (b *Block) MarshalJSON() ([]byte, error) {
